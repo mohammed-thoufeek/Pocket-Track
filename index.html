@@ -297,20 +297,17 @@
   <!-- Summary box removed per user request; pie chart and legend remain below -->
 
     <div class="summary-tabs" role="tablist">
+
       <div class="tab active" data-range="daily">Daily</div>
       <div class="tab" data-range="weekly">Weekly</div>
       <div class="tab" data-range="monthly">Monthly</div>
     </div>
-
-    <!-- Month picker for monthly reports -->
+    <!-- Month picker for monthly reports (now above chart) -->
     <div id="monthPickerContainer" style="display:none; margin-bottom:10px;">
       <label for="reportMonth" style="font-size:13px; color:var(--sub); margin-right:6px;">Select Month:</label>
       <input type="month" id="reportMonth" style="padding:6px; border-radius:8px; border:1px solid #e6eef8;">
     </div>
-    </div>
-
     <div>
-
       <canvas id="pieChart"></canvas>
       <div style="display:flex; justify-content:space-between; margin-top:8px;">
         <div><strong>Total Expense</strong><div id="totalSpend" style="color:var(--sub)">0.00</div></div>
@@ -1484,8 +1481,24 @@ function onTab(e){
   // Show month picker only for monthly tab
   const range = e.currentTarget.dataset.range;
   const monthPicker = document.getElementById('monthPickerContainer');
+  const monthInput = document.getElementById('reportMonth');
   if (range === 'monthly') {
     monthPicker.style.display = '';
+    // Set value to current month if not set
+    if(monthInput && !monthInput.value){
+      const now = new Date();
+      const pad = n => String(n).padStart(2,'0');
+      monthInput.value = `${now.getFullYear()}-${pad(now.getMonth()+1)}`;
+    }
+    // Always attach event handler (avoid duplicates)
+    if(monthInput && !monthInput._handlerAttached){
+      monthInput.addEventListener('change', function(){
+        if(document.querySelector('.tab.active')?.dataset.range === 'monthly'){
+          renderSummary();
+        }
+      });
+      monthInput._handlerAttached = true;
+    }
   } else {
     monthPicker.style.display = 'none';
   }
@@ -1545,25 +1558,8 @@ function renderSummary(){
   const entries = Object.entries(catTotals).map(([k,v])=> ({k, v: Math.abs(v)})).filter(x=>x.v>0);
   drawPieChart(entries);
 
-  // Update month picker value to current month if not set
-  if(range==='monthly'){
-    const monthInput = document.getElementById('reportMonth');
-    if(monthInput && !monthInput.value){
-      const pad = n => String(n).padStart(2,'0');
-      monthInput.value = `${from.getFullYear()}-${pad(from.getMonth()+1)}`;
-    }
-  }
-// Listen for month picker changes
-document.addEventListener('DOMContentLoaded', function() {
-  const monthInput = document.getElementById('reportMonth');
-  if(monthInput){
-    monthInput.addEventListener('change', function(){
-      if(document.querySelector('.tab.active')?.dataset.range === 'monthly'){
-        renderSummary();
-      }
-    });
-  }
-});
+  // (No-op: month picker value is now set in onTab)
+
 }
 
 /* Simple pie chart drawing */
